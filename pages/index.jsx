@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-// Icônes minimalistes locales pour éviter les dépendances externes en preview
+
+// Icônes locales minimalistes (pas de dépendances externes)
 const BaseIcon = (props) => (
   <svg
     className={props.className}
@@ -34,14 +35,31 @@ export default function A2Grid() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  // Remplace FORMSPREE_ENDPOINT par ton lien réel quand prêt
+  const FORMSPREE_ENDPOINT = "https://formspree.io/f/TON_ID_ICI"; // ne s'affiche pas sur le site
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      if (!FORMSPREE_ENDPOINT.includes("TON_ID_ICI")) {
+        const res = await fetch(FORMSPREE_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...form, _subject: "Demande A2 GRID" })
+        });
+        if (!res.ok) throw new Error("Envoi échoué");
+      } else {
+        // Mode démo si aucun endpoint réel n'est défini
+        await new Promise((r) => setTimeout(r, 600));
+      }
       setSent(true);
       setForm({ name: "", email: "", phone: "", message: "" });
-    }, 900);
+    } catch (err) {
+      alert("Impossible d'envoyer le message pour le moment. Réessayez plus tard.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const Service = ({ icon: Icon, title, desc }) => (
@@ -60,7 +78,6 @@ export default function A2Grid() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Global styles */}
       <style>{`html{scroll-behavior:smooth}`}</style>
 
       {/* Navbar */}
@@ -82,9 +99,9 @@ export default function A2Grid() {
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero (sans galerie supérieure) */}
       <section id="top" className="bg-gradient-to-b from-white to-emerald-50/60">
-        <div className="max-w-6xl mx-auto px-4 py-16 sm:py-24 grid md:grid-cols-2 gap-10 items-center">
+        <div className="max-w-6xl mx-auto px-4 py-16 sm:py-24 grid md:grid-cols-1 gap-10 items-center">
           <div>
             <div className="flex flex-wrap gap-2 mb-4">
               <Pill>Entretien</Pill>
@@ -99,7 +116,7 @@ export default function A2Grid() {
               <br className="hidden sm:block" /> service rapide en Alsace
             </h1>
             <p className="text-gray-600 mb-6 max-w-prose">
-              A2 GRID accompagne particuliers et pros : tonte, taille de haies, désherbage, nettoyage de terrasses, petit élagage, abattage, nettoyage de bâtiments et transport de matériaux.
+              A2 GRID accompagne particuliers et pros : abattage, nettoyage de bâtiments (intérieur/extérieur), transport de matériaux, tonte, taille de haies, désherbage, nettoyage de terrasses et petit élagage.
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="#contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition">
@@ -114,22 +131,6 @@ export default function A2Grid() {
             </div>
             <div className="mt-6 text-sm text-gray-500">Réponse sous 24h ouvrées • Devis gratuit • Interventions soignées</div>
           </div>
-          <div className="relative">
-            <div className="aspect-[4/3] rounded-3xl bg-white border shadow-sm overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/10 to-transparent"/>
-              <div className="h-full w-full grid grid-cols-2 gap-1 p-1">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="rounded-2xl bg-gray-100 border flex items-center justify-center text-gray-400 text-sm">
-                    Photo à venir
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="absolute -bottom-4 -right-4 bg-white border shadow-sm rounded-2xl px-4 py-3 hidden md:flex items-center gap-2">
-              <Sun className="w-4 h-4 text-emerald-600"/>
-              <span className="text-sm">Matériel pro • Travail soigné</span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -142,6 +143,7 @@ export default function A2Grid() {
             <Service icon={Axe} title="Abattage d’arbres" desc="Abattage contrôlé, démontage par sections si nécessaire et périmètre sécurisé." />
             <Service icon={Broom} title="Nettoyage intérieur / extérieur" desc="Nettoyage de bâtiments : intérieur, vitres, façades, bardages et fin de chantier." />
             <Service icon={Truck} title="Transport de matériaux" desc="Transport et évacuation : terre, bois, gravats, matériaux — camionnette/benne légère." />
+
             <Service icon={Leaf} title="Tonte & entretien de pelouse" desc="Tonte régulière, finitions précises, bordures nettes et évacuation des déchets verts." />
             <Service icon={Scissors} title="Taille de haies & arbustes" desc="Haies linéaires, formes, remise à niveau saisonnière et nettoyage après intervention." />
             <Service icon={Shovel} title="Désherbage & remise en état" desc="Désherbage mécanique/manuel, allées, parterres, remises à niveau de massifs." />
@@ -154,9 +156,9 @@ export default function A2Grid() {
 
       {/* Réalisations */}
       <section id="realisations" className="py-16 bg-white border-t">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-6xl mx_auto px-4">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2">Réalisations</h2>
-          <p className="text-gray-600 mb-8">Gallerie en cours – vous pourrez ajouter vos photos ici.</p>
+          <p className="text-gray-600 mb-8">Galerie en cours – vous pourrez ajouter vos photos ici.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="rounded-2xl overflow-hidden border bg-gray-100 aspect-[4/3] flex items-center justify-center text-gray-400">
@@ -183,16 +185,14 @@ export default function A2Grid() {
           </div>
           <div className="w-full">
             <div className="rounded-2xl overflow-hidden border bg-white">
-              {/* OpenStreetMap embed – integrated map */}
+              {/* OpenStreetMap embed */}
               <div className="aspect-[4/3]">
                 <iframe
                   title="Carte A2 GRID – Colmar"
                   className="w-full h-full"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  src={
-                    "https://www.openstreetmap.org/export/embed.html?bbox=7.30%2C48.04%2C7.42%2C48.11&layer=mapnik&marker=48.079%2C7.357"
-                  }
+                  src={"https://www.openstreetmap.org/export/embed.html?bbox=7.30%2C48.04%2C7.42%2C48.11&layer=mapnik&marker=48.079%2C7.357"}
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export default function A2Grid() {
                   </div>
                   <div>
                     <label className="block text-sm mb-1">Message</label>
-                    <textarea rows={5} required className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.message} onChange={(e)=>setForm({...form, message:e.target.value})} placeholder="Ex. Taille de haie 12m, désherbage allée 30m², évacuation déchets…"/>
+                    <textarea rows={5} required className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.message} onChange={(e)=>setForm({...form, message:e.target.value})} placeholder="Ex. Abattage d’un cerisier ~8m, évacuation + nettoyage; ou Nettoyage de façade 60m²; ou Transport 2m³ de gravats…"/>
                   </div>
                   <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
                     {loading ? "Envoi…" : "Envoyer ma demande"}
@@ -246,7 +246,7 @@ export default function A2Grid() {
           <div className="grid gap-4 content-start">
             <div className="rounded-2xl border p-6 bg-emerald-50">
               <h3 className="font-semibold mb-2">Infos</h3>
-              <p className="text-sm text-gray-700 flex items-center gap-2"><Mail className="w-4 h-4"/> contact@a2grid.fr (à confirmer)</p>
+              <p className="text-sm text-gray-700 flex items-center gap-2"><Mail className="w-4 h-4"/> <a href="mailto:deuxgried@outlook.com" className="hover:underline">deuxgried@outlook.com</a></p>
               <p className="text-sm text-gray-700 flex items-center gap-2"><Phone className="w-4 h-4"/> <a href="tel:+33646912878" className="hover:underline">06 46 91 28 78</a></p>
               <p className="text-sm text-gray-700 flex items-center gap-2"><MapPin className="w-4 h-4"/> Basé à Colmar – interventions Alsace</p>
             </div>
@@ -263,13 +263,57 @@ export default function A2Grid() {
         </div>
       </section>
 
+      {/* Mentions légales */}
+      <section id="mentions" className="py-16 border-t bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Mentions légales</h2>
+          <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-700">
+            <div className="space-y-2">
+              <p><span className="font-semibold">Éditeur :</span> A2 GRID – Services d'espaces verts <span className="text-gray-400">[Dénomination exacte à compléter]</span></p>
+              <p><span className="font-semibold">Forme juridique :</span> <span className="text-gray-400">[Micro‑entreprise / SASU / SARL – à compléter]</span></p>
+              <p><span className="font-semibold">Siège social :</span> Colmar, France <span className="text-gray-400">[Adresse complète à compléter]</span></p>
+              <p><span className="font-semibold">Immatriculation :</span> SIREN/SIRET <span className="text-gray-400">[n° à compléter]</span></p>
+              <p><span className="font-semibold">TVA intracommunautaire :</span> <span className="text-gray-400">[le cas échéant]</span></p>
+              <p><span className="font-semibold">Direction de la publication :</span> Mboudou Auguste <span className="text-gray-400">[ou représentant légal]</span></p>
+              <p><span className="font-semibold">Contact :</span> <a href="mailto:deuxgried@outlook.com" className="hover:underline">deuxgried@outlook.com</a> • <a href="tel:+33646912878" className="hover:underline">06 46 91 28 78</a></p>
+              <p><span className="font-semibold">Assurance RC Pro :</span> <span className="text-gray-400">[Assureur / n° police / couverture – à compléter]</span></p>
+            </div>
+            <div className="space-y-2">
+              <p><span className="font-semibold">Hébergeur :</span> <span className="text-gray-400">[OVH / o2switch / Vercel – raison sociale, adresse, téléphone]</span></p>
+              <p><span className="font-semibold">Propriété intellectuelle :</span> contenus et visuels © {new Date().getFullYear()} A2 GRID. Toute reproduction non autorisée est interdite.</p>
+              <p><span className="font-semibold">Responsabilité :</span> les informations du site sont fournies à titre indicatif et peuvent évoluer.</p>
+              <p><span className="font-semibold">Médiation à la consommation :</span> <span className="text-gray-400">[Coordonnées du médiateur, si applicable]</span></p>
+              <p><span className="font-semibold">Dernière mise à jour :</span> {new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Politique de confidentialité */}
+      <section id="confidentialite" className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Politique de confidentialité</h2>
+          <div className="space-y-3 text-sm text-gray-700 max-w-3xl">
+            <p><span className="font-semibold">Données collectées :</span> via le formulaire (nom, email, téléphone, message). <span className="text-gray-400">[Ajouter autres sources si besoin]</span></p>
+            <p><span className="font-semibold">Finalités :</span> prise de contact, édition de devis, suivi des interventions et gestion commerciale.</p>
+            <p><span className="font-semibold">Bases légales :</span> exécution de mesures précontractuelles et intérêt légitime (gestion de la relation client).</p>
+            <p><span className="font-semibold">Durées de conservation :</span> 24 mois pour les demandes sans suite contractuelle ; durée du contrat + 5 ans pour les clients.</p>
+            <p><span className="font-semibold">Destinataires :</span> A2 GRID et ses prestataires techniques (hébergeur, messagerie). <span className="text-gray-400">[Lister le cas échéant]</span></p>
+            <p><span className="font-semibold">Hébergement & transferts :</span> hébergement en UE/EEE ; pas de transfert hors UE sans garanties appropriées.</p>
+            <p><span className="font-semibold">Vos droits (RGPD) :</span> accès, rectification, effacement, opposition, limitation, portabilité. Exercez vos droits à : <a href="mailto:deuxgried@outlook.com" className="underline">deuxgried@outlook.com</a>.</p>
+            <p><span className="font-semibold">Cookies :</span> uniquement cookies techniques nécessaires au fonctionnement. <span className="text-gray-400">[Ajouter bannière si analytics ultérieurement]</span></p>
+            <p><span className="font-semibold">Sécurité :</span> mesures techniques et organisationnelles adaptées. <span className="text-gray-400">[DPO non désigné]</span></p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-10 border-t bg-white">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
           <p>© {new Date().getFullYear()} A2 GRID – Espaces verts</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-emerald-700">Mentions légales</a>
-            <a href="#" className="hover:text-emerald-700">Politique de confidentialité</a>
+            <a href="#mentions" className="hover:text-emerald-700">Mentions légales</a>
+            <a href="#confidentialite" className="hover:text-emerald-700">Politique de confidentialité</a>
             <a href="#top" className="hover:text-emerald-700">Haut de page</a>
           </div>
         </div>

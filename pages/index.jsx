@@ -1,5 +1,33 @@
 import React, { useState } from "react";
-import { Leaf, Scissors, Trees, Shovel, Sun, Droplets, Mail, Phone, MapPin, Hammer, Axe, Broom, Building2, Truck } from "lucide-react";
+// Icônes minimalistes locales pour éviter les dépendances externes en preview
+const BaseIcon = (props) => (
+  <svg
+    className={props.className}
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="9" />
+  </svg>
+);
+const Leaf = BaseIcon;
+const Scissors = BaseIcon;
+const Trees = BaseIcon;
+const Shovel = BaseIcon;
+const Sun = BaseIcon;
+const Droplets = BaseIcon;
+const Mail = BaseIcon;
+const Phone = BaseIcon;
+const MapPin = BaseIcon;
+const Hammer = BaseIcon;
+const Axe = BaseIcon;
+const Broom = BaseIcon;
+const Truck = BaseIcon;
 
 export default function A2Grid() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
@@ -111,15 +139,15 @@ export default function A2Grid() {
           <h2 className="text-2xl sm:text-3xl font-bold mb-2">Nos services</h2>
           <p className="text-gray-600 mb-8">Prestations rapides, propres et au juste prix.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <Service icon={Axe} title="Abattage d’arbres" desc="Abattage contrôlé, démontage par sections si nécessaire et périmètre sécurisé." />
+            <Service icon={Broom} title="Nettoyage intérieur / extérieur" desc="Nettoyage de bâtiments : intérieur, vitres, façades, bardages et fin de chantier." />
+            <Service icon={Truck} title="Transport de matériaux" desc="Transport et évacuation : terre, bois, gravats, matériaux — camionnette/benne légère." />
             <Service icon={Leaf} title="Tonte & entretien de pelouse" desc="Tonte régulière, finitions précises, bordures nettes et évacuation des déchets verts." />
             <Service icon={Scissors} title="Taille de haies & arbustes" desc="Haies linéaires, formes, remise à niveau saisonnière et nettoyage après intervention." />
             <Service icon={Shovel} title="Désherbage & remise en état" desc="Désherbage mécanique/manuel, allées, parterres, remises à niveau de massifs." />
             <Service icon={Trees} title="Petit élagage" desc="Élagage léger, branches gênantes ou dangereuses, sécurisation des accès." />
             <Service icon={Droplets} title="Nettoyage terrasses & allées" desc="Nettoyage haute pression contrôlé, remise au propre des surfaces extérieures." />
             <Service icon={Hammer} title="Débarras végétaux" desc="Chargement, évacuation en déchetterie et finition propre du chantier." />
-            <Service icon={Axe} title="Abattage d’arbres" desc="Abattage contrôlé, démontage par sections si nécessaire et périmètre sécurisé." />
-            <Service icon={Broom} title="Nettoyage intérieur / extérieur" desc="Nettoyage de bâtiments : intérieur, vitres, façades, bardages et fin de chantier." />
-            <Service icon={Truck} title="Transport de matériaux" desc="Transport et évacuation : terre, bois, gravats, matériaux — camionnette/benne légère." />
           </div>
         </div>
       </section>
@@ -238,3 +266,14 @@ export default function A2Grid() {
       {/* Footer */}
       <footer className="py-10 border-t bg-white">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
+          <p>© {new Date().getFullYear()} A2 GRID – Espaces verts</p>
+          <div className="flex items-center gap-4">
+            <a href="#" className="hover:text-emerald-700">Mentions légales</a>
+            <a href="#" className="hover:text-emerald-700">Politique de confidentialité</a>
+            <a href="#top" className="hover:text-emerald-700">Haut de page</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

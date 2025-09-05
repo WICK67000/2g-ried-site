@@ -1,377 +1,240 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Leaf, Scissors, Trees, Shovel, Sun, Droplets, Mail, Phone, MapPin, Hammer, Axe, Broom, Building2, Truck } from "lucide-react";
 
-// 2G RIED — Test Preview v0.6 (JS pur, sans scripts externes)
-// Objectif : garder la démo front-only (mailto) et masquer les self-tests en prod
-// - AUCUN script externe (pas de Turnstile côté client)
-// - Self-tests visibles seulement en dev/local (ou selon logique hostname)
-
-export default function TwoGRiedTest() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", company: "" });
-  const [status, setStatus] = useState("");
+export default function A2Grid() {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Captcha local uniquement (pas de Turnstile)
-  const [humanCheck, setHumanCheck] = useState(false);
-  const [mathAns, setMathAns] = useState("");
-  const [pageReady, setPageReady] = useState(false);
-
-  useEffect(() => {
-    const onHash = () => setMenuOpen(false);
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-
-  // Petit délai anti-bot pour le captcha local
-  useEffect(() => {
-    const t = setTimeout(() => setPageReady(true), 1200);
-    return () => clearTimeout(t);
-  }, []);
-
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  // ✅ Détermine si on affiche la section "Self-tests"
-  // - visible en local (localhost / 127.0.0.1 / ::1)
-  // - cachée par défaut ailleurs (prod vercel/app)
-  const SHOW_TESTS = (() => {
-    if (typeof window !== "undefined") {
-      const h = window.location.hostname;
-      return h === "localhost" || h === "127.0.0.1" || h === "::1";
-    }
-    // côté build/server : on cache par défaut
-    return false;
-  })();
-
-  // Validator – conserve la logique des tests existants
-  const validateForm = (data, token, opts) => {
-    if (!data.name || !data.email || !data.message) {
-      return "Merci de compléter au moins Nom, Email et Message.";
-    }
-    if (data.company) {
-      return "Merci, votre message est pris en compte."; // honeypot fake success
-    }
-    if (!token) {
-      if (opts?.allowFallback && opts?.fallbackOk) return null; // accepte le captcha local validé
-      return "Merci de valider le captcha.";
-    }
-    return null;
-  };
-
-  const onSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setStatus("");
-
-    // Ici, pas de Turnstile : on utilise le captcha local
-    const fallbackOk = humanCheck && mathAns.trim() === "5" && pageReady;
-    const err = validateForm(form, "", { allowFallback: true, fallbackOk });
-    if (err) { setStatus(err); return; }
-
-    try {
-      setLoading(true);
-      // Version SANS back-end : mailto (zéro dépendance)
-      const subject = encodeURIComponent("Demande de devis 2G RIED");
-      const body = encodeURIComponent(
-        `Nom: ${form.name}\nEmail: ${form.email}\nTéléphone: ${form.phone || "-"}\n\nMessage:\n${form.message}`
-      );
-      window.location.href = `mailto:deuxgried@outlook.com?subject=${subject}&body=${body}`;
-      setStatus("Votre messagerie va s'ouvrir pour envoyer l'email.");
-      setForm({ name: "", email: "", phone: "", message: "", company: "" });
-      setHumanCheck(false);
-      setMathAns("");
-    } catch (err) {
-      console.error(err);
-      setStatus("❌ Impossible de préparer l'email.");
-    } finally {
+    setLoading(true);
+    setTimeout(() => {
       setLoading(false);
-    }
+      setSent(true);
+      setForm({ name: "", email: "", phone: "", message: "" });
+    }, 900);
   };
 
-  const NavLink = ({ href, children }) => (
-    <a href={href} className="px-3 py-2 rounded-lg hover:bg-green-50 transition-colors">{children}</a>
+  const Service = ({ icon: Icon, title, desc }) => (
+    <div className="rounded-2xl shadow-sm bg-white border p-6 hover:shadow-md transition">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100"><Icon className="w-5 h-5" /></div>
+        <h3 className="text-lg font-semibold">{title}</h3>
+      </div>
+      <p className="text-sm text-gray-600 leading-relaxed">{desc}</p>
+    </div>
   );
 
-  // --- Developer Self-Tests (6 cas + 2 ajoutés) ---
-  const [tests, setTests] = useState(null);
-  const runSelfTests = () => {
-    const cases = [
-      { name: "Champs vides", input: { name: "", email: "", message: "", phone: "", company: "" }, token: "", expected: "Merci de compléter au moins Nom, Email et Message." },
-      { name: "Honeypot rempli", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "bot" }, token: "dummy", expected: "Merci, votre message est pris en compte." },
-      { name: "Captcha manquant", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha." },
-      { name: "Saisie valide (token)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "ok", expected: null },
-      { name: "Saisie valide (fallback OK)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: null, fallback: { allowFallback: true, fallbackOk: true } },
-      { name: "Fallback présent mais échec", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha.", fallback: { allowFallback: true, fallbackOk: false } },
-      // ✅ Cas supplémentaires (sans changer les tests existants)
-      { name: "Honeypot prime (champs manquants)", input: { name: "", email: "", message: "x", phone: "", company: "robot" }, token: "", expected: "Merci, votre message est pris en compte." },
-      { name: "Message avec espaces (accepté)", input: { name: "A", email: "a@b.c", message: "   ", phone: "", company: "" }, token: "", expected: null, fallback: { allowFallback: true, fallbackOk: true } },
-    ];
-    const results = cases.map((c) => {
-      const got = validateForm(c.input, c.token, c.fallback);
-      const pass = got === c.expected;
-      return { name: c.name, pass, got: String(got), expected: String(c.expected) };
-    });
-    setTests(results);
-  };
+  const Pill = ({ children }) => (
+    <span className="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-700 border border-emerald-100">{children}</span>
+  );
 
   return (
-    <div className="min-h-screen bg-white text-gray-800">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Global styles */}
+      <style>{`html{scroll-behavior:smooth}`}</style>
+
+      {/* Navbar */}
+      <header className="sticky top-0 z-40 backdrop-blur bg-white/80 border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-green-600 flex items-center justify-center shadow">
-              <span className="text-white font-bold">2G</span>
-            </div>
-            <div>
-              <p className="text-lg font-semibold">2G RIED</p>
-              <p className="text-xs text-gray-500 -mt-1">Espaces verts • Grand Est</p>
-            </div>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-1">
-            <NavLink href="#services">Services</NavLink>
-            <NavLink href="#realisations">Réalisations</NavLink>
-            <NavLink href="#zone">Zone & Carte</NavLink>
-            <NavLink href="#contact">Contact</NavLink>
-            <a href="#devis" className="ml-3 px-4 py-2 rounded-2xl bg-green-600 text-white hover:opacity-90">Devis gratuit</a>
+          <a href="#top" className="flex items-center gap-2 font-bold text-xl">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white">A2</span>
+            <span>A2 GRID</span>
+          </a>
+          <nav className="hidden sm:flex items-center gap-5 text-sm">
+            <a href="#services" className="hover:text-emerald-700">Services</a>
+            <a href="#realisations" className="hover:text-emerald-700">Réalisations</a>
+            <a href="#zones" className="hover:text-emerald-700">Zones</a>
+            <a href="#contact" className="hover:text-emerald-700">Contact</a>
+            <a href="#contact" className="ml-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition">
+              <Hammer className="w-4 h-4" /> Demander un devis
+            </a>
           </nav>
-
-          <button className="md:hidden px-3 py-2 rounded-xl border" onClick={() => setMenuOpen(!menuOpen)} aria-label="Ouvrir le menu">☰</button>
         </div>
-        {menuOpen && (
-          <div className="md:hidden border-t">
-            <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col">
-              <a className="py-2" href="#services">Services</a>
-              <a className="py-2" href="#realisations">Réalisations</a>
-              <a className="py-2" href="#zone">Zone & Carte</a>
-              <a className="py-2" href="#contact">Contact</a>
-              <a className="py-2" href="#devis">Devis gratuit</a>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-green-50 to-white">
-        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
+      <section id="top" className="bg-gradient-to-b from-white to-emerald-50/60">
+        <div className="max-w-6xl mx-auto px-4 py-16 sm:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">Entretien & aménagement d'espaces verts</h1>
-            <p className="mt-4 text-lg text-gray-600">Tonte, taille, haies, élagage, désherbage, débroussaillage, petites créations et maintenance régulière.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#devis" className="px-5 py-3 rounded-2xl bg-green-600 text-white font-medium hover:opacity-90">Demander un devis</a>
-              <a href="#services" className="px-5 py-3 rounded-2xl border font-medium hover:bg-green-50">Voir nos services</a>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Pill>Entretien</Pill>
+              <Pill>Aménagement</Pill>
+              <Pill>Débarras végétaux</Pill>
+              <Pill>Abattage</Pill>
+              <Pill>Bâtiment</Pill>
+              <Pill>Transport</Pill>
             </div>
-            <ul className="mt-6 text-sm text-gray-600 grid grid-cols-2 gap-2 max-w-lg">
-              <li>✅ Intervention rapide</li>
-              <li>✅ Devis gratuit</li>
-              <li>✅ Particuliers & pros</li>
-              <li>✅ Colmar • alentours</li>
-            </ul>
+            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-4">
+              Espaces verts <span className="text-emerald-600">pro</span> &
+              <br className="hidden sm:block" /> service rapide en Alsace
+            </h1>
+            <p className="text-gray-600 mb-6 max-w-prose">
+              A2 GRID accompagne particuliers et pros : tonte, taille de haies, désherbage, nettoyage de terrasses, petit élagage, abattage, nettoyage de bâtiments et transport de matériaux.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a href="#contact" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                <Mail className="w-4 h-4"/> Demander un devis gratuit
+              </a>
+              <a href="tel:+33646912878" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition">
+                <Phone className="w-4 h-4"/> Appeler directement
+              </a>
+              <a href="#zones" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border hover:bg-gray-50 transition">
+                <MapPin className="w-4 h-4"/> Zones d’intervention
+              </a>
+            </div>
+            <div className="mt-6 text-sm text-gray-500">Réponse sous 24h ouvrées • Devis gratuit • Interventions soignées</div>
           </div>
-          <div>
-            <div className="aspect-video rounded-2xl overflow-hidden shadow">
-              <img alt="Pelouse entretenue et haies taillées" className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1920&auto=format&fit=crop" />
+          <div className="relative">
+            <div className="aspect-[4/3] rounded-3xl bg-white border shadow-sm overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/10 to-transparent"/>
+              <div className="h-full w-full grid grid-cols-2 gap-1 p-1">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="rounded-2xl bg-gray-100 border flex items-center justify-center text-gray-400 text-sm">
+                    Photo à venir
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 bg-white border shadow-sm rounded-2xl px-4 py-3 hidden md:flex items-center gap-2">
+              <Sun className="w-4 h-4 text-emerald-600"/>
+              <span className="text-sm">Matériel pro • Travail soigné</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services */}
-      <section id="services" className="py-14 md:py-20 bg-white">
+      <section id="services" className="py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold">Nos services</h2>
-          <p className="text-gray-600 mt-2 max-w-2xl">Liste Modifiable — ajustable selon nos besoins réels.</p>
-          <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { t: "Tonte & Bordures", d: "Tonte régulière, finitions propres, évacuation." },
-              { t: "Taille de haies", d: "Haies nettes, lignes droites, déchets verts gérés." },
-              { t: "Débroussaillage", d: "Terrains en friche, herbes hautes, remise au propre." },
-              { t: "Élagage léger", d: "Petite taille d'arbres/arbustes." },
-              { t: "Désherbage", d: "Allées, terrasses, massifs, solutions adaptées." },
-              { t: "Créations simples", d: "Gazon en plaques, paillage, bordures, massifs." },
-            ].map((s, i) => (
-              <div key={i} className="rounded-2xl border p-5 hover:shadow transition-shadow bg-white">
-                <h3 className="font-semibold text-lg">{s.t}</h3>
-                <p className="text-sm text-gray-600 mt-1">{s.d}</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Nos services</h2>
+          <p className="text-gray-600 mb-8">Prestations rapides, propres et au juste prix.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <Service icon={Leaf} title="Tonte & entretien de pelouse" desc="Tonte régulière, finitions précises, bordures nettes et évacuation des déchets verts." />
+            <Service icon={Scissors} title="Taille de haies & arbustes" desc="Haies linéaires, formes, remise à niveau saisonnière et nettoyage après intervention." />
+            <Service icon={Shovel} title="Désherbage & remise en état" desc="Désherbage mécanique/manuel, allées, parterres, remises à niveau de massifs." />
+            <Service icon={Trees} title="Petit élagage" desc="Élagage léger, branches gênantes ou dangereuses, sécurisation des accès." />
+            <Service icon={Droplets} title="Nettoyage terrasses & allées" desc="Nettoyage haute pression contrôlé, remise au propre des surfaces extérieures." />
+            <Service icon={Hammer} title="Débarras végétaux" desc="Chargement, évacuation en déchetterie et finition propre du chantier." />
+            <Service icon={Axe} title="Abattage d’arbres" desc="Abattage contrôlé, démontage par sections si nécessaire et périmètre sécurisé." />
+            <Service icon={Broom} title="Nettoyage intérieur / extérieur" desc="Nettoyage de bâtiments : intérieur, vitres, façades, bardages et fin de chantier." />
+            <Service icon={Truck} title="Transport de matériaux" desc="Transport et évacuation : terre, bois, gravats, matériaux — camionnette/benne légère." />
+          </div>
+        </div>
+      </section>
+
+      {/* Réalisations */}
+      <section id="realisations" className="py-16 bg-white border-t">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Réalisations</h2>
+          <p className="text-gray-600 mb-8">Gallerie en cours – vous pourrez ajouter vos photos ici.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden border bg-gray-100 aspect-[4/3] flex items-center justify-center text-gray-400">
+                Photo à venir
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Réalisations (placeholders) */}
-      <section id="realisations" className="py-14 md:py-20 bg-green-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold">Réalisations (bientôt)</h2>
-          <p className="text-gray-600 mt-2 max-w-2xl"> Photos ici plus tard.</p>
-          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1,2,3,4,5,6].map((i) => (
-              <div key={i} className="aspect-video rounded-2xl bg-white border grid place-items-center text-gray-400">
-                <span>Photo #{i}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Zone & Carte */}
-      <section id="zone" className="py-14 md:py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold">Zone d'intervention & Carte</h2>
-          <p className="text-gray-600 mt-2">Colmar, et alentours (ajustable).</p>
-          <div className="mt-6 rounded-2xl overflow-hidden border shadow-sm">
-            <iframe title="Carte 2G RIED — Colmar" src="https://www.google.com/maps?q=Colmar%20France&output=embed" width="100%" height="420" style={{ border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
-          </div>
-          <div className="mt-4 text-sm text-gray-500">Si l'iframe était bloquée : <a className="text-green-700 underline" href="https://www.google.com/maps?q=Colmar%20France" target="_blank" rel="noreferrer">ouvrir la carte</a>.</div>
-        </div>
-      </section>
-
-      {/* Devis */}
-      <section id="devis" className="py-14 md:py-20 bg-green-600 text-white">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+      {/* Zones & Map */}
+      <section id="zones" className="py-16">
+        <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-2 gap-6 items-start">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold">Obtenir un devis gratuit</h2>
-            <p className="mt-2 text-green-50">Réponse sous 24–48h ouvrées (indicatif).</p>
-            <ul className="mt-4 text-green-50 text-sm space-y-1 list-disc pl-5">
-              <li>Tarifs clairs selon la surface et la complexité</li>
-              <li>Interventions ponctuelles ou contrat d'entretien</li>
-              <li>Déplacement inclus dans un rayon défini</li>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Zones d’intervention</h2>
+            <p className="text-gray-600 mb-6">Basés près de Colmar – interventions rapides dans le centre Alsace.</p>
+            <ul className="grid grid-cols-2 gap-2 text-sm">
+              {["Colmar", "Wintzenheim", "Horbourg‑Wihr", "Andolsheim", "Biesheim", "Widensolen", "Neuf‑Brisach", "Sélestat", "Guebwiller", "Mulhouse"].map((v) => (
+                <li key={v} className="px-3 py-2 rounded-xl bg-white border flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-600"/> {v}
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="bg-white/10 p-4 rounded-2xl border border-white/20">
-            <form onSubmit={onSubmit} className="grid gap-3">
-              {/* Honeypot (anti-spam) */}
-              <input type="text" name="company" value={form.company} onChange={onChange} className="hidden" autoComplete="off" tabIndex={-1} aria-hidden="true" />
-
-              <input name="name" value={form.name} onChange={onChange} placeholder="Nom" className="px-3 py-2 rounded-xl bg-white text-gray-800" />
-              <input type="email" name="email" value={form.email} onChange={onChange} placeholder="Email" className="px-3 py-2 rounded-xl bg-white text-gray-800" />
-              <input name="phone" value={form.phone} onChange={onChange} placeholder="Téléphone (optionnel)" className="px-3 py-2 rounded-xl bg-white text-gray-800" />
-              <textarea name="message" value={form.message} onChange={onChange} placeholder="Votre besoin…" rows={4} className="px-3 py-2 rounded-xl bg-white text-gray-800" />
-
-              {/* Captcha local (aucun script externe) */}
-              <div className="rounded-xl border bg-white p-3 text-gray-800">
-                <p className="text-sm mb-2">Vérification rapide :</p>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={humanCheck} onChange={(e) => setHumanCheck(e.target.checked)} />
-                  Je confirme ne pas être un robot
-                </label>
-                <div className="mt-2 flex items-center gap-2 text-sm">
-                  <span>2 + 3 =</span>
-                  <input value={mathAns} onChange={(e) => setMathAns(e.target.value)} className="w-16 px-2 py-1 rounded border" inputMode="numeric" />
-                </div>
-                {!pageReady && <p className="mt-2 text-xs text-gray-500">Activation dans quelques secondes…</p>}
+          <div className="w-full">
+            <div className="rounded-2xl overflow-hidden border bg-white">
+              {/* OpenStreetMap embed – integrated map */}
+              <div className="aspect-[4/3]">
+                <iframe
+                  title="Carte A2 GRID – Colmar"
+                  className="w-full h-full"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={
+                    "https://www.openstreetmap.org/export/embed.html?bbox=7.30%2C48.04%2C7.42%2C48.11&layer=mapnik&marker=48.079%2C7.357"
+                  }
+                />
               </div>
-
-              <button
-                type="submit"
-                disabled={loading || !humanCheck || mathAns.trim() !== "5" || !pageReady}
-                className="mt-1 px-4 py-2 rounded-2xl bg-white text-green-700 font-semibold hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? "Envoi…" : "Envoyer la demande"}
-              </button>
-              {status && <p className="text-sm text-white/90">{status}</p>}
-            </form>
-            <p className="text-xs text-green-50 mt-3">
-              En soumettant ce formulaire, vous acceptez que vos données soient utilisées uniquement pour traiter votre demande,
-              conformément à notre <a href="#confidentialite" className="underline">politique de confidentialité</a>.
-            </p>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">Carte intégrée. Si votre navigateur bloque l’iframe, une carte statique s’affichera automatiquement dans la version hébergée.</div>
           </div>
         </div>
       </section>
 
       {/* Contact */}
-      <section id="contact" className="py-12 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-xl md:text-2xl font-bold">Contact</h2>
-          <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <div className="rounded-2xl border p-4">
-              <p className="text-gray-500">Email</p>
-              <a className="font-medium text-green-700 underline" href="mailto:deuxgried@outlook.com">deuxgried@outlook.com</a>
+      <section id="contact" className="py-16 bg-white border-t">
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Contact & devis</h2>
+            <p className="text-gray-600 mb-6">Décrivez votre besoin – réponse sous 24h ouvrées.</p>
+            <div className="rounded-2xl border p-6">
+              {!sent ? (
+                <form onSubmit={handleSubmit} className="grid gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">Nom</label>
+                    <input required className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.name} onChange={(e)=>setForm({...form, name:e.target.value})} />
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm mb-1">Email</label>
+                      <input type="email" required className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.email} onChange={(e)=>setForm({...form, email:e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">Téléphone</label>
+                      <input className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.phone} onChange={(e)=>setForm({...form, phone:e.target.value})} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Message</label>
+                    <textarea rows={5} required className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" value={form.message} onChange={(e)=>setForm({...form, message:e.target.value})} placeholder="Ex. Taille de haie 12m, désherbage allée 30m², évacuation déchets…"/>
+                  </div>
+                  <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
+                    {loading ? "Envoi…" : "Envoyer ma demande"}
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">✓</div>
+                  <p className="font-semibold">Message bien envoyé !</p>
+                  <p className="text-sm text-gray-600">Nous vous recontactons sous 24h ouvrées.</p>
+                  <button onClick={()=>setSent(false)} className="mt-4 text-sm underline">Envoyer une autre demande</button>
+                </div>
+              )}
             </div>
-            <div className="rounded-2xl border p-4">
-              <p className="text-gray-500">Téléphone</p>
-              <a className="font-medium text-green-700 underline" href="tel:+33646912878" aria-label="Appeler 2G RIED au 06 46 91 28 78">06&nbsp;46&nbsp;91&nbsp;28&nbsp;78</a>
+          </div>
+
+          <div className="grid gap-4 content-start">
+            <div className="rounded-2xl border p-6 bg-emerald-50">
+              <h3 className="font-semibold mb-2">Infos</h3>
+              <p className="text-sm text-gray-700 flex items-center gap-2"><Mail className="w-4 h-4"/> contact@a2grid.fr (à confirmer)</p>
+              <p className="text-sm text-gray-700 flex items-center gap-2"><Phone className="w-4 h-4"/> <a href="tel:+33646912878" className="hover:underline">06 46 91 28 78</a></p>
+              <p className="text-sm text-gray-700 flex items-center gap-2"><MapPin className="w-4 h-4"/> Basé à Colmar – interventions Alsace</p>
             </div>
-            <div className="rounded-2xl border p-4">
-              <p className="text-gray-500">Horaires</p>
-              <span className="font-medium">Lun–Sam, 8h–19h</span>
-            </div>
-            <div className="rounded-2xl border p-4">
-              <p className="text-gray-500">Zone</p>
-              <span className="font-medium">Colmar • Mulhouse • environs</span>
+            <div className="rounded-2xl border p-6">
+              <h3 className="font-semibold mb-2">Pourquoi A2 GRID ?</h3>
+              <ul className="text-sm text-gray-700 list-disc ml-4 space-y-1">
+                <li>Devis clair et prix justes</li>
+                <li>Interventions rapides et propres</li>
+                <li>Évacuation des déchets comprise sur demande</li>
+                <li>Matériel pro, finitions soignées</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
-
-      {/* Politique de confidentialité */}
-      <section id="confidentialite" className="py-14 bg-green-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold">Politique de confidentialité</h2>
-          <p className="mt-3 text-gray-700 max-w-3xl">
-            2G RIED collecte uniquement les données nécessaires au traitement de votre demande (nom, email, téléphone, message).
-            Vos informations ne sont ni revendues ni utilisées à des fins commerciales sans votre accord. Vous pouvez demander
-            l'accès, la rectification ou la suppression de vos données en nous écrivant à
-            <a className="ml-1 underline text-green-700" href="mailto:deuxgried@outlook.com">deuxgried@outlook.com</a>.
-          </p>
-          <ul className="mt-4 text-gray-700 list-disc pl-5 space-y-1 max-w-3xl">
-            <li>Base légale : intérêt légitime à répondre à votre demande et exécution de mesures précontractuelles.</li>
-            <li>Durée de conservation : 12 mois maximum après le dernier contact, sauf obligation légale différente.</li>
-            <li>Hébergement : à définir lors du déploiement (ex. Vercel). Pas de script tiers chargé sur cette page.</li>
-            <li>Anti-spam : utilisation d'un champ invisible (honeypot) et d'un mini captcha local.</li>
-          </ul>
-        </div>
-      </section>
-
-      {/* Self-Tests (affichés uniquement si SHOW_TESTS === true) */}
-      {SHOW_TESTS ? (
-        <section id="tests" className="py-12 bg-white">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl md:text-2xl font-bold">Self-tests (validation du formulaire)</h2>
-              <button onClick={runSelfTests} className="px-4 py-2 rounded-xl border hover:bg-green-50">Lancer les tests</button>
-            </div>
-            {tests && (
-              <div className="mt-4 overflow-auto border rounded-xl">
-                <table className="w-full text-sm">
-                  <thead className="bg-green-50">
-                    <tr>
-                      <th className="text-left p-2">Cas</th>
-                      <th className="text-left p-2">Résultat</th>
-                      <th className="text-left p-2">Obtenu</th>
-                      <th className="text-left p-2">Attendu</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tests.map((t, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="p-2">{t.name}</td>
-                        <td className="p-2">{t.pass ? "✅" : "❌"}</td>
-                        <td className="p-2 whitespace-pre-wrap">{t.got}</td>
-                        <td className="p-2 whitespace-pre-wrap">{t.expected}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {!tests && <p className="mt-3 text-gray-600">Clique sur « Lancer les tests » pour exécuter 8 cas (champs vides, honeypot, captcha manquant, token valide, fallback OK, fallback KO, honeypot prime, message espaces).</p>}
-          </div>
-        </section>
-      ) : null}
 
       {/* Footer */}
-      <footer className="border-t">
-        <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} 2G RIED — Tous droits réservés.</p>
-          <div className="flex items-center gap-4">
-            <a href="#services" className="hover:text-gray-700">Services</a>
-            <a href="#realisations" className="hover:text-gray-700">Réalisations</a>
-            <a href="#zone" className="hover:text-gray-700">Zone & Carte</a>
-            <a href="#contact" className="hover:text-gray-700">Contact</a>
-            <a href="#confidentialite" className="hover:text-gray-700">Confidentialité</a>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+      <footer className="py-10 border-t bg-white">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">

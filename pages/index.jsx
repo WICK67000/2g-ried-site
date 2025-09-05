@@ -164,7 +164,7 @@ export default function TwoGRiedTest() {
               <li>✅ Intervention rapide</li>
               <li>✅ Devis gratuit</li>
               <li>✅ Particuliers & pros</li>
-              <li>✅ Colmar • Mulhouse • alentours</li>
+              <li>✅ Colmar • alentours</li>
             </ul>
           </div>
           <div>
@@ -185,7 +185,7 @@ export default function TwoGRiedTest() {
               { t: "Tonte & Bordures", d: "Tonte régulière, finitions propres, évacuation." },
               { t: "Taille de haies", d: "Haies nettes, lignes droites, déchets verts gérés." },
               { t: "Débroussaillage", d: "Terrains en friche, herbes hautes, remise au propre." },
-              { t: "Élagage léger", d: "Petite taille d'arbres/arbustes (hors grimpe complexe)." },
+              { t: "Élagage léger", d: "Petite taille d'arbres/arbustes." },
               { t: "Désherbage", d: "Allées, terrasses, massifs, solutions adaptées." },
               { t: "Créations simples", d: "Gazon en plaques, paillage, bordures, massifs." },
             ].map((s, i) => (
@@ -217,7 +217,7 @@ export default function TwoGRiedTest() {
       <section id="zone" className="py-14 md:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Zone d'intervention & Carte</h2>
-          <p className="text-gray-600 mt-2">Colmar, Mulhouse, et alentours (ajustable).</p>
+          <p className="text-gray-600 mt-2">Colmar, et alentours (ajustable).</p>
           <div className="mt-6 rounded-2xl overflow-hidden border shadow-sm">
             <iframe title="Carte 2G RIED — Colmar" src="https://www.google.com/maps?q=Colmar%20France&output=embed" width="100%" height="420" style={{ border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
           </div>

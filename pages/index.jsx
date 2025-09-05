@@ -179,7 +179,7 @@ export default function TwoGRiedTest() {
       <section id="services" className="py-14 md:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Nos services</h2>
-          <p className="text-gray-600 mt-2 max-w-2xl">Liste non exhaustive — ajustable selon tes besoins réels.</p>
+          <p className="text-gray-600 mt-2 max-w-2xl">Liste Modifiable — ajustable selon nos besoins réels.</p>
           <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { t: "Tonte & Bordures", d: "Tonte régulière, finitions propres, évacuation." },
@@ -202,7 +202,7 @@ export default function TwoGRiedTest() {
       <section id="realisations" className="py-14 md:py-20 bg-green-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Réalisations (bientôt)</h2>
-          <p className="text-gray-600 mt-2 max-w-2xl">Tu ajouteras tes photos ici plus tard.</p>
+          <p className="text-gray-600 mt-2 max-w-2xl"> Photos ici plus tard.</p>
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1,2,3,4,5,6].map((i) => (
               <div key={i} className="aspect-video rounded-2xl bg-white border grid place-items-center text-gray-400">
@@ -217,7 +217,7 @@ export default function TwoGRiedTest() {
       <section id="zone" className="py-14 md:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Zone d'intervention & Carte</h2>
-          <p className="text-gray-600 mt-2">Colmar, Mulhouse, Widensolen et alentours (ajustable).</p>
+          <p className="text-gray-600 mt-2">Colmar, Mulhouse, et alentours (ajustable).</p>
           <div className="mt-6 rounded-2xl overflow-hidden border shadow-sm">
             <iframe title="Carte 2G RIED — Colmar" src="https://www.google.com/maps?q=Colmar%20France&output=embed" width="100%" height="420" style={{ border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
           </div>

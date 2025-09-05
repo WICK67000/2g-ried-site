@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 
+// 2G RIED — Test Preview v0.6 (JS pur, sans scripts externes)
+// Objectif : garder la démo front-only (mailto) et masquer les self-tests en prod
+// - AUCUN script externe (pas de Turnstile côté client)
+// - Self-tests visibles seulement en dev/local (ou selon logique hostname)
+
 export default function TwoGRiedTest() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", company: "" });
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Captcha local uniquement (pas de Turnstile)
   const [humanCheck, setHumanCheck] = useState(false);
   const [mathAns, setMathAns] = useState("");
   const [pageReady, setPageReady] = useState(false);
@@ -16,6 +22,7 @@ export default function TwoGRiedTest() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
+  // Petit délai anti-bot pour le captcha local
   useEffect(() => {
     const t = setTimeout(() => setPageReady(true), 1200);
     return () => clearTimeout(t);
@@ -23,15 +30,28 @@ export default function TwoGRiedTest() {
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ✅ Détermine si on affiche la section "Self-tests"
+  // - visible en local (localhost / 127.0.0.1 / ::1)
+  // - cachée par défaut ailleurs (prod vercel/app)
+  const SHOW_TESTS = (() => {
+    if (typeof window !== "undefined") {
+      const h = window.location.hostname;
+      return h === "localhost" || h === "127.0.0.1" || h === "::1";
+    }
+    // côté build/server : on cache par défaut
+    return false;
+  })();
+
+  // Validator – conserve la logique des tests existants
   const validateForm = (data, token, opts) => {
     if (!data.name || !data.email || !data.message) {
       return "Merci de compléter au moins Nom, Email et Message.";
     }
     if (data.company) {
-      return "Merci, votre message est pris en compte.";
+      return "Merci, votre message est pris en compte."; // honeypot fake success
     }
     if (!token) {
-      if (opts?.allowFallback && opts?.fallbackOk) return null;
+      if (opts?.allowFallback && opts?.fallbackOk) return null; // accepte le captcha local validé
       return "Merci de valider le captcha.";
     }
     return null;
@@ -41,12 +61,14 @@ export default function TwoGRiedTest() {
     e.preventDefault();
     setStatus("");
 
+    // Ici, pas de Turnstile : on utilise le captcha local
     const fallbackOk = humanCheck && mathAns.trim() === "5" && pageReady;
     const err = validateForm(form, "", { allowFallback: true, fallbackOk });
     if (err) { setStatus(err); return; }
 
     try {
       setLoading(true);
+      // Version SANS back-end : mailto (zéro dépendance)
       const subject = encodeURIComponent("Demande de devis 2G RIED");
       const body = encodeURIComponent(
         `Nom: ${form.name}\nEmail: ${form.email}\nTéléphone: ${form.phone || "-"}\n\nMessage:\n${form.message}`
@@ -68,15 +90,19 @@ export default function TwoGRiedTest() {
     <a href={href} className="px-3 py-2 rounded-lg hover:bg-green-50 transition-colors">{children}</a>
   );
 
+  // --- Developer Self-Tests (6 cas + 2 ajoutés) ---
   const [tests, setTests] = useState(null);
   const runSelfTests = () => {
     const cases = [
-      { name: "Empty fields", input: { name: "", email: "", message: "", phone: "", company: "" }, token: "", expected: "Merci de compléter au moins Nom, Email et Message." },
-      { name: "Honeypot filled", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "bot" }, token: "dummy", expected: "Merci, votre message est pris en compte." },
-      { name: "Captcha missing", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha." },
-      { name: "Valid payload (token)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "ok", expected: null },
-      { name: "Valid payload (fallback ok)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: null, fallback: { allowFallback: true, fallbackOk: true } },
-      { name: "Fallback present but failed", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha.", fallback: { allowFallback: true, fallbackOk: false } },
+      { name: "Champs vides", input: { name: "", email: "", message: "", phone: "", company: "" }, token: "", expected: "Merci de compléter au moins Nom, Email et Message." },
+      { name: "Honeypot rempli", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "bot" }, token: "dummy", expected: "Merci, votre message est pris en compte." },
+      { name: "Captcha manquant", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha." },
+      { name: "Saisie valide (token)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "ok", expected: null },
+      { name: "Saisie valide (fallback OK)", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: null, fallback: { allowFallback: true, fallbackOk: true } },
+      { name: "Fallback présent mais échec", input: { name: "A", email: "a@b.c", message: "Hi", phone: "", company: "" }, token: "", expected: "Merci de valider le captcha.", fallback: { allowFallback: true, fallbackOk: false } },
+      // ✅ Cas supplémentaires (sans changer les tests existants)
+      { name: "Honeypot prime (champs manquants)", input: { name: "", email: "", message: "x", phone: "", company: "robot" }, token: "", expected: "Merci, votre message est pris en compte." },
+      { name: "Message avec espaces (accepté)", input: { name: "A", email: "a@b.c", message: "   ", phone: "", company: "" }, token: "", expected: null, fallback: { allowFallback: true, fallbackOk: true } },
     ];
     const results = cases.map((c) => {
       const got = validateForm(c.input, c.token, c.fallback);
@@ -88,6 +114,7 @@ export default function TwoGRiedTest() {
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
+      {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -123,6 +150,7 @@ export default function TwoGRiedTest() {
         )}
       </header>
 
+      {/* Hero */}
       <section className="bg-gradient-to-b from-green-50 to-white">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
           <div>
@@ -147,6 +175,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Services */}
       <section id="services" className="py-14 md:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Nos services</h2>
@@ -169,6 +198,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Réalisations (placeholders) */}
       <section id="realisations" className="py-14 md:py-20 bg-green-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Réalisations (bientôt)</h2>
@@ -183,6 +213,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Zone & Carte */}
       <section id="zone" className="py-14 md:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Zone d'intervention & Carte</h2>
@@ -194,6 +225,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Devis */}
       <section id="devis" className="py-14 md:py-20 bg-green-600 text-white">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
           <div>
@@ -207,6 +239,7 @@ export default function TwoGRiedTest() {
           </div>
           <div className="bg-white/10 p-4 rounded-2xl border border-white/20">
             <form onSubmit={onSubmit} className="grid gap-3">
+              {/* Honeypot (anti-spam) */}
               <input type="text" name="company" value={form.company} onChange={onChange} className="hidden" autoComplete="off" tabIndex={-1} aria-hidden="true" />
 
               <input name="name" value={form.name} onChange={onChange} placeholder="Nom" className="px-3 py-2 rounded-xl bg-white text-gray-800" />
@@ -214,6 +247,7 @@ export default function TwoGRiedTest() {
               <input name="phone" value={form.phone} onChange={onChange} placeholder="Téléphone (optionnel)" className="px-3 py-2 rounded-xl bg-white text-gray-800" />
               <textarea name="message" value={form.message} onChange={onChange} placeholder="Votre besoin…" rows={4} className="px-3 py-2 rounded-xl bg-white text-gray-800" />
 
+              {/* Captcha local (aucun script externe) */}
               <div className="rounded-xl border bg-white p-3 text-gray-800">
                 <p className="text-sm mb-2">Vérification rapide :</p>
                 <label className="flex items-center gap-2 text-sm">
@@ -244,6 +278,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Contact */}
       <section id="contact" className="py-12 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-xl md:text-2xl font-bold">Contact</h2>
@@ -254,7 +289,7 @@ export default function TwoGRiedTest() {
             </div>
             <div className="rounded-2xl border p-4">
               <p className="text-gray-500">Téléphone</p>
-              <span className="font-medium">à ajouter</span>
+              <a className="font-medium text-green-700 underline" href="tel:+33646912878" aria-label="Appeler 2G RIED au 06 46 91 28 78">06&nbsp;46&nbsp;91&nbsp;28&nbsp;78</a>
             </div>
             <div className="rounded-2xl border p-4">
               <p className="text-gray-500">Horaires</p>
@@ -268,6 +303,7 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
+      {/* Politique de confidentialité */}
       <section id="confidentialite" className="py-14 bg-green-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold">Politique de confidentialité</h2>
@@ -286,40 +322,44 @@ export default function TwoGRiedTest() {
         </div>
       </section>
 
-      <section id="tests" className="py-12 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-bold">Self-tests (validation du formulaire)</h2>
-            <button onClick={runSelfTests} className="px-4 py-2 rounded-xl border hover:bg-green-50">Lancer les tests</button>
-          </div>
-          {tests && (
-            <div className="mt-4 overflow-auto border rounded-xl">
-              <table className="w-full text-sm">
-                <thead className="bg-green-50">
-                  <tr>
-                    <th className="text-left p-2">Cas</th>
-                    <th className="text-left p-2">Résultat</th>
-                    <th className="text-left p-2">Obtenu</th>
-                    <th className="text-left p-2">Attendu</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tests.map((t, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-2">{t.name}</td>
-                      <td className="p-2">{t.pass ? "✅" : "❌"}</td>
-                      <td className="p-2 whitespace-pre-wrap">{t.got}</td>
-                      <td className="p-2 whitespace-pre-wrap">{t.expected}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Self-Tests (affichés uniquement si SHOW_TESTS === true) */}
+      {SHOW_TESTS ? (
+        <section id="tests" className="py-12 bg-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl md:text-2xl font-bold">Self-tests (validation du formulaire)</h2>
+              <button onClick={runSelfTests} className="px-4 py-2 rounded-xl border hover:bg-green-50">Lancer les tests</button>
             </div>
-          )}
-          {!tests && <p className="mt-3 text-gray-600">Clique sur « Lancer les tests » pour exécuter 6 cas (champs vides, honeypot, captcha manquant, token valide, fallback OK, fallback KO).</p>}
-        </div>
-      </section>
+            {tests && (
+              <div className="mt-4 overflow-auto border rounded-xl">
+                <table className="w-full text-sm">
+                  <thead className="bg-green-50">
+                    <tr>
+                      <th className="text-left p-2">Cas</th>
+                      <th className="text-left p-2">Résultat</th>
+                      <th className="text-left p-2">Obtenu</th>
+                      <th className="text-left p-2">Attendu</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tests.map((t, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="p-2">{t.name}</td>
+                        <td className="p-2">{t.pass ? "✅" : "❌"}</td>
+                        <td className="p-2 whitespace-pre-wrap">{t.got}</td>
+                        <td className="p-2 whitespace-pre-wrap">{t.expected}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {!tests && <p className="mt-3 text-gray-600">Clique sur « Lancer les tests » pour exécuter 8 cas (champs vides, honeypot, captcha manquant, token valide, fallback OK, fallback KO, honeypot prime, message espaces).</p>}
+          </div>
+        </section>
+      ) : null}
 
+      {/* Footer */}
       <footer className="border-t">
         <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-gray-500 flex flex-col md:flex-row items-center justify-between gap-3">
           <p>© {new Date().getFullYear()} 2G RIED — Tous droits réservés.</p>
